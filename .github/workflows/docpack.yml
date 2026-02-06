@@ -1,0 +1,47 @@
+      name: Build DocPack
+
+      on:
+        push:
+          branches: ["main"]
+        workflow_dispatch:
+
+      permissions:
+contents: write
+
+      jobs:
+        build-docpack:
+          runs-on: ubuntu-latest
+          steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Python
+              uses: actions/setup-python@v5
+              with:
+                python-version: "3.11"
+
+            - name: Install ai-dockpack (from GitHub)
+              run: |
+                python -m pip install --upgrade pip
+                pip install --no-cache-dir --force-reinstall "git+https://github.com/Kuan-Peng/ai-dockpack.git@main"
+
+            - name: Build docpack.zip
+              run: |
+                ai-dockpack build --repo . --out docpack.zip
+
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
+              with:
+                name: docpack
+                path: docpack.zip
+
+
+- name: Publish Release (docpack.zip)
+  uses: softprops/action-gh-release@v2
+  with:
+    tag_name: docpack-${{ github.run_number }}
+    name: DocPack ${{ github.run_number }}
+    prerelease: true
+    files: docpack.zip
+  env:
+    GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
